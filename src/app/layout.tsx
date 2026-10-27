@@ -13,6 +13,12 @@ export const metadata: Metadata = {
     description:
       "Deterministic on-chain holder distribution, liquidity verification, authority status, and grounded AI summaries. Zero hype, zero speculation.",
     type: "website",
+    images: ["/logo.png"],
+  },
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.png",
   },
 };
 
