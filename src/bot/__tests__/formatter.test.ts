@@ -153,37 +153,38 @@ describe('Telegram Bot Formatter & Modular Views', () => {
 
   it('formats full token report (Overview)', () => {
     const formatted = formatTokenReport(mockReport);
-    expect(formatted).toContain('⚡ <b>LAUNCHLENS REPORT: $JUP &amp; CO</b>');
+    expect(formatted).toContain('⚡ <a href="https://launchlens-delta.vercel.app/report/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"><b>Jupiter &lt;Core&gt;</b></a> ($JUP &amp; CO)');
     expect(formatted).toContain('<code>JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN</code>');
-    expect(formatted).toContain('🛡️ <b>RISK POSTURE:</b> 🟢 LOW RISK');
-    expect(formatted).toContain('• Mint Authority: ❌ Revoked (Safe)');
-    expect(formatted).toContain('• Top 10 Non-Burn: <b>52.4%</b>');
+    expect(formatted).toContain('🛡️ LOW RISK 🟢 (<b>12/100</b>)');
+    expect(formatted).toContain('Mint Authority: <b>Revoked (Safe) 🟢</b>');
+    expect(formatted).toContain('Top 10 Non-Burn: <b>52.4%</b>');
+    expect(formatted).toContain('Total LP: <b>$125.00M</b>');
   });
 
   it('formats /holders deep-dive report', () => {
     const formatted = formatHoldersReport(mockReport);
-    expect(formatted).toContain('👥 <b>HOLDER DISTRIBUTION: $JUP &amp; CO</b>');
+    expect(formatted).toContain('👥 <a href="https://launchlens-delta.vercel.app/report/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"><b>Jupiter &lt;Core&gt;</b></a> — Holder Distribution ($JUP &amp; CO)');
     expect(formatted).toContain('Top 10 Non-Burn: <b>52.4%</b>');
     expect(formatted).toContain('7xKX...gAsU');
   });
 
   it('formats /lp liquidity deep-dive report', () => {
     const formatted = formatLiquidityReport(mockReport);
-    expect(formatted).toContain('💧 <b>LIQUIDITY &amp; AMM AUDIT: $JUP &amp; CO</b>');
-    expect(formatted).toContain('Total Liquidity: <b>$125.00M</b>');
+    expect(formatted).toContain('💧 <a href="https://launchlens-delta.vercel.app/report/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"><b>Jupiter &lt;Core&gt;</b></a> — Liquidity Audit ($JUP &amp; CO)');
+    expect(formatted).toContain('Total LP: <b>$125.00M</b>');
     expect(formatted).toContain('RAYDIUM');
   });
 
   it('formats /auth security deep-dive report', () => {
     const formatted = formatSecurityReport(mockReport);
-    expect(formatted).toContain('🔐 <b>SECURITY &amp; PERMISSIONS: $JUP &amp; CO</b>');
-    expect(formatted).toContain('PERMANENTLY REVOKED (Safe)');
+    expect(formatted).toContain('🔐 <a href="https://launchlens-delta.vercel.app/report/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"><b>Jupiter &lt;Core&gt;</b></a> — Security &amp; Permissions ($JUP &amp; CO)');
+    expect(formatted).toContain('REVOKED (Safe) 🟢');
   });
 
   it('formats /risk scorecard deep-dive report', () => {
     const formatted = formatRiskReport(mockReport);
-    expect(formatted).toContain('⚠️ <b>RISK SCORECARD &amp; FINDINGS: $JUP &amp; CO</b>');
-    expect(formatted).toContain('<b>Risk Score:</b> <b>12/100</b>');
+    expect(formatted).toContain('⚠️ <a href="https://launchlens-delta.vercel.app/report/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"><b>Jupiter &lt;Core&gt;</b></a> — Risk Scorecard ($JUP &amp; CO)');
+    expect(formatted).toContain('Score: <b>12/100</b>');
   });
 
   it('generates interactive keyboards for different views', () => {

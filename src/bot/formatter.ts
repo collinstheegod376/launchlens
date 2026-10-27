@@ -73,28 +73,35 @@ export function formatTokens(num: number | undefined | null): string {
 export function getRiskBadge(level: RiskSeverity): string {
   switch (level) {
     case 'CRITICAL':
-      return '🚨 CRITICAL RISK';
+      return 'CRITICAL RISK 🚨';
     case 'HIGH':
-      return '🔴 HIGH RISK';
+      return 'HIGH RISK 🔴';
     case 'MEDIUM':
-      return '🟡 MODERATE RISK';
+      return 'MODERATE RISK 🟡';
     case 'LOW':
-      return '🟢 LOW RISK';
+      return 'LOW RISK 🟢';
     case 'INFO':
     default:
-      return '⚪ INFORMATIONAL';
+      return 'INFORMATIONAL ⚪';
   }
 }
 
 /**
- * 1. FULL OVERVIEW REPORT
- * Spacious, breathable layout with clean dividers and high visual hierarchy.
+ * 1. FULL OVERVIEW REPORT (/scan or address)
+ * Tree-structured layout with on-chain proofs, clean links, and 1-tap copyable CA.
  */
-export function formatTokenReport(report: TokenReport): string {
+export function formatTokenReport(report: TokenReport, baseUrl?: string): string {
+  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://launchlens-delta.vercel.app';
+  const cleanBase = base.replace(/\/$/, '');
   const { token, holders, liquidity, risk, aiSummary } = report;
   const symbol = escapeHtml(token.symbol || 'UNKNOWN');
   const name = escapeHtml(token.name || 'Unknown Token');
   const mint = token.mint;
+  const webUrl = `${cleanBase}/report/${mint}`;
+  const dexscreenerUrl =
+    liquidity.highestLiquidityPool?.url || `https://dexscreener.com/solana/${mint}`;
+  const solscanUrl = `https://solscan.io/token/${mint}`;
+  const rugcheckUrl = `https://rugcheck.xyz/tokens/${mint}`;
 
   const riskBadge = getRiskBadge(risk.scorecard.overallLevel);
   const riskScore = risk.scorecard.score ?? 0;
@@ -105,296 +112,313 @@ export function formatTokenReport(report: TokenReport): string {
   const totalLiquidity = liquidity.totalLiquidityUsd ?? 0;
   const volume24h = liquidity.totalVolume24h ?? 0;
 
-  const mintAuthStatus = token.authorities.isMintRevoked
-    ? '❌ Revoked (Safe)'
-    : '⚠️ Active (Can Mint)';
-  const freezeAuthStatus = token.authorities.isFreezeRevoked
-    ? '❌ Revoked (Safe)'
-    : '⚠️ Active (Can Freeze)';
-  const mutabilityStatus = token.authorities.isMutable
-    ? '⚠️ Mutable'
-    : '❌ Immutable';
-
-  const top10Pct = holders.top10ConcentrationPct ?? 0;
-  const progressBar = renderProgressBar(top10Pct);
-
-  let poolDesc = 'No active DEX pool found';
-  let lpLockedDesc = 'Unknown / Unlocked';
+  let poolName = 'No active DEX pool';
+  let lpLockedDesc = 'Unlocked';
   if (highestPool) {
     const dex = escapeHtml(highestPool.dexId?.toUpperCase() || 'DEX');
-    const poolAddr = `${highestPool.poolAddress.slice(0, 4)}...${highestPool.poolAddress.slice(-4)}`;
-    poolDesc = `<b>${dex}</b> (<code>${poolAddr}</code>)`;
+    const baseSym = escapeHtml(highestPool.baseToken.symbol || symbol);
+    const quoteSym = escapeHtml(highestPool.quoteToken.symbol || 'SOL');
+    poolName = `${dex} (${baseSym}/${quoteSym})`;
     lpLockedDesc = highestPool.lpLockedPct !== undefined
-      ? `<b>${highestPool.lpLockedPct.toFixed(1)}% locked</b>`
-      : '⚠️ Not locked';
+      ? `${highestPool.lpLockedPct.toFixed(1)}% Locked 🔒`
+      : 'Unverified ⚠️';
   }
 
-  const criticalFindings = (risk.findings || []).filter(
-    (f: RiskFinding) => f.severity === 'CRITICAL' || f.severity === 'HIGH' || f.severity === 'MEDIUM'
+  const top10Pct = holders.top10ConcentrationPct ?? 0;
+  const top20Pct = holders.top20ConcentrationPct ?? 0;
+  const progressBar = renderProgressBar(top10Pct);
+
+  // Top 5 clickable holders
+  const top5Links = (holders.topHolders || [])
+    .slice(0, 5)
+    .map((h) => {
+      const pct = (h.percentage ?? 0).toFixed(1);
+      return `<a href="https://solscan.io/account/${h.address}">${pct}%</a>`;
+    })
+    .join(' | ');
+
+  const mintAuthStatus = token.authorities.isMintRevoked ? 'Revoked (Safe) 🟢' : 'Active (Warning) 🔴';
+  const freezeAuthStatus = token.authorities.isFreezeRevoked ? 'Revoked (Safe) 🟢' : 'Active (Warning) 🔴';
+  const mutabilityStatus = !token.authorities.isMutable ? 'Immutable 🟢' : 'Mutable 🟡';
+  const progStandard = token.tokenProgram === 'spl-token-2022' ? 'Token-2022' : 'SPL-Token';
+
+  const critOrHigh = (risk.findings || []).filter(
+    (f) => f.severity === 'CRITICAL' || f.severity === 'HIGH' || f.severity === 'MEDIUM'
   );
-
-  let findingsSection = '';
-  if (criticalFindings.length > 0) {
-    findingsSection = criticalFindings
-      .slice(0, 4)
-      .map((f: RiskFinding) => {
-        const icon = f.severity === 'CRITICAL' ? '🚨' : f.severity === 'HIGH' ? '🔴' : '🟡';
-        return `• ${icon} <b>${escapeHtml(f.title)}</b>\n  <i>${escapeHtml(f.description)}</i>`;
-      })
-      .join('\n\n');
-  } else {
-    findingsSection = '• 🟢 <i>No critical or high-risk findings detected in standard ruleset.</i>';
+  let findingsText = '🟢 No high-risk rules triggered';
+  if (critOrHigh.length > 0) {
+    const topFinding = critOrHigh[0];
+    const icon = topFinding.severity === 'CRITICAL' ? '🚨' : topFinding.severity === 'HIGH' ? '🔴' : '🟡';
+    findingsText = `${icon} ${escapeHtml(topFinding.title)} (${critOrHigh.length} flagged)`;
   }
 
-  let insightText = '';
+  let aiText = '';
   if (aiSummary?.narrative) {
-    insightText = escapeHtml(aiSummary.narrative.trim());
+    aiText = escapeHtml(aiSummary.narrative.trim());
   } else if (aiSummary?.keyTakeaways && aiSummary.keyTakeaways.length > 0) {
-    insightText = escapeHtml(aiSummary.keyTakeaways.slice(0, 3).join(' '));
+    aiText = escapeHtml(aiSummary.keyTakeaways.slice(0, 2).join(' '));
   } else {
-    insightText = `Risk scorecard indicates a risk score of ${riskScore}/100. Review top holders and liquidity lockup before trading.`;
+    aiText = `On-chain risk score of ${riskScore}/100. Review top holders and liquidity lockup before trading.`;
   }
 
   return [
-    `⚡ <b>LAUNCHLENS REPORT: $${symbol}</b>`,
-    `<i>${name}</i>`,
+    `⚡ <a href="${webUrl}"><b>${name}</b></a> ($${symbol})`,
+    `└ 🛡️ ${riskBadge} (<b>${riskScore}/100</b>) | 🏷️ ${progStandard} | ⏱️ Live`,
+    '',
+    `📊 <b>Market &amp; Liquidity</b>`,
+    `├ USD: <b>${formatPrice(price)}</b>`,
+    `├ MC / FDV: <b>${formatCurrency(fdv)}</b>`,
+    `├ 24h Vol: <b>${formatCurrency(volume24h)}</b>`,
+    `├ Total LP: <b>${formatCurrency(totalLiquidity)}</b> (${lpLockedDesc})`,
+    `└ Primary: ${poolName}`,
+    '',
+    `👥 <b>Holders Distribution</b>`,
+    `├ Top 10 Non-Burn: <b>${top10Pct.toFixed(1)}%</b> <code>[${progressBar}]</code>`,
+    `├ Top 20 Non-Burn: <b>${top20Pct.toFixed(1)}%</b>${holders.burnedSupplyPct > 0 ? ` | Burned: <b>${holders.burnedSupplyPct.toFixed(1)}%</b> 🔥` : ''}`,
+    top5Links ? `└ Top 5: ${top5Links}` : `└ Top 10: <b>${top10Pct.toFixed(1)}%</b>`,
+    '',
+    `🔐 <b>Authorities &amp; Permissions</b>`,
+    `├ Mint Authority: <b>${mintAuthStatus}</b>`,
+    `├ Freeze Authority: <b>${freezeAuthStatus}</b>`,
+    `└ Metadata: <b>${mutabilityStatus}</b>`,
+    '',
+    `⚠️ <b>Risk Findings</b>`,
+    `└ ${findingsText}`,
+    '',
+    `🧠 <b>AI Synthesis</b>`,
+    `└ <i>"${aiText}"</i>`,
+    '',
+    `🔗 <b>Quick Links</b>`,
+    `└ <a href="${webUrl}">[🌐 Web Dossier]</a> • <a href="${dexscreenerUrl}">[📈 DEXScreener]</a> • <a href="${solscanUrl}">[🔍 Solscan]</a> • <a href="${rugcheckUrl}">[🛡️ RugCheck]</a>`,
+    '',
     `<code>${mint}</code>`,
-    '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `🛡️ <b>RISK POSTURE:</b> ${riskBadge} (Score: <b>${riskScore}/100</b>)`,
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    '',
-    `📊 <b>Market Intelligence:</b>`,
-    `• Price: <b>${formatPrice(price)}</b>`,
-    `• FDV: <b>${formatCurrency(fdv)}</b>`,
-    `• Total Liquidity: <b>${formatCurrency(totalLiquidity)}</b>`,
-    `• 24h Volume: <b>${formatCurrency(volume24h)}</b>`,
-    '',
-    `🔐 <b>Cryptographic Authorities:</b>`,
-    `• Mint Authority: ${mintAuthStatus}`,
-    `• Freeze Authority: ${freezeAuthStatus}`,
-    `• Metadata Update: ${mutabilityStatus}`,
-    '',
-    `👥 <b>Holder Distribution:</b>`,
-    `• Top 10 Non-Burn: <b>${top10Pct.toFixed(1)}%</b>`,
-    `  <code>[${progressBar}]</code>`,
-    holders.burnedSupplyPct > 0 ? `• Burned Supply: <b>${holders.burnedSupplyPct.toFixed(1)}%</b>` : '',
-    '',
-    `💧 <b>DEX Liquidity:</b>`,
-    `• Primary Pool: ${poolDesc}`,
-    `• LP Lockup: ${lpLockedDesc}`,
-    '',
-    `⚠️ <b>Key Risk Findings:</b>`,
-    findingsSection,
-    '',
-    `🧠 <b>AI Risk Synthesis:</b>`,
-    `<i>${insightText}</i>`,
-    '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `🔍 <i>Use buttons below to explore Holders, LP, or Security deep-dives.</i>`,
-  ]
-    .filter((line) => line !== '')
-    .join('\n');
+  ].join('\n');
 }
 
 /**
  * 2. HOLDERS DEEP-DIVE REPORT (/holders or /top)
  */
-export function formatHoldersReport(report: TokenReport): string {
+export function formatHoldersReport(report: TokenReport, baseUrl?: string): string {
+  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://launchlens-delta.vercel.app';
+  const cleanBase = base.replace(/\/$/, '');
   const { token, holders } = report;
   const symbol = escapeHtml(token.symbol || 'TOKEN');
+  const name = escapeHtml(token.name || 'Token');
   const mint = token.mint;
+  const webUrl = `${cleanBase}/report/${mint}`;
+  const solscanHoldersUrl = `https://solscan.io/token/${mint}#holders`;
+
   const top10Pct = holders.top10ConcentrationPct ?? 0;
   const top20Pct = holders.top20ConcentrationPct ?? 0;
   const burnedPct = holders.burnedSupplyPct ?? 0;
   const circulating = formatTokens(holders.circulatingSupplyFormatted);
-
   const progressBar = renderProgressBar(top10Pct);
 
-  // Format top 8 holders
-  const topList = (holders.topHolders || [])
+  const topHoldersList = (holders.topHolders || [])
     .slice(0, 8)
-    .map((h: HolderRecord, idx: number) => {
-      const rank = `#${idx + 1}`.padEnd(3, ' ');
-      const addr = `${h.address.slice(0, 4)}...${h.address.slice(-4)}`;
+    .map((h: HolderRecord, idx: number, arr: HolderRecord[]) => {
+      const isLast = idx === arr.length - 1;
+      const branch = isLast ? '└' : '├';
+      const shortAddr = `${h.address.slice(0, 4)}...${h.address.slice(-4)}`;
+      const link = `<a href="https://solscan.io/account/${h.address}">${shortAddr}</a>`;
       const pct = (h.percentage ?? 0).toFixed(2);
       const balance = formatTokens(h.uiBalance);
 
       let tag = '👤 Wallet';
       if (h.classification === 'burn') tag = '🔥 Burn';
       else if (h.classification === 'pool') tag = '💧 AMM Pool';
-      else if (h.isInsider) tag = '⚠️ Insider';
+      else if (h.isInsider) tag = '⚠️ Team';
 
-      return `${rank} <code>${addr}</code> • <b>${pct}%</b>\n    Balance: ${balance} ${symbol} • ${tag}`;
+      return `${branch} #${idx + 1} ${link} • <b>${pct}%</b> (${balance} ${symbol}) ${tag}`;
     })
-    .join('\n\n');
+    .join('\n');
 
   return [
-    `👥 <b>HOLDER DISTRIBUTION: $${symbol}</b>`,
-    `<code>${mint}</code>`,
+    `👥 <a href="${webUrl}"><b>${name}</b></a> — Holder Distribution ($${symbol})`,
+    `└ 📊 Top 10: <b>${top10Pct.toFixed(1)}%</b> | Top 20: <b>${top20Pct.toFixed(1)}%</b>${burnedPct > 0 ? ` | Burned: <b>${burnedPct.toFixed(1)}%</b> 🔥` : ''}`,
     '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `📊 <b>Concentration Breakdown:</b>`,
-    `• Top 10 Non-Burn: <b>${top10Pct.toFixed(1)}%</b>`,
-    `  <code>[${progressBar}]</code>`,
-    `• Top 20 Non-Burn: <b>${top20Pct.toFixed(1)}%</b>`,
-    `• Burned Supply: <b>${burnedPct.toFixed(1)}%</b>`,
-    `• Circulating Float: <b>${circulating} ${symbol}</b>`,
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `📈 <b>Concentration Breakdown</b>`,
+    `├ Top 10 Non-Burn: <b>${top10Pct.toFixed(1)}%</b> <code>[${progressBar}]</code>`,
+    `├ Circulating Float: <b>${circulating} ${symbol}</b>`,
+    `└ Incinerated / Dead: <b>${burnedPct.toFixed(1)}%</b>`,
     '',
-    `🏆 <b>Top Holder Accounts:</b>`,
-    topList || '<i>No individual holder accounts recorded.</i>',
+    `🏆 <b>Top Account Wallets</b>`,
+    topHoldersList || '└ <i>No individual holder accounts recorded.</i>',
     '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
     `💡 <i>LaunchLens isolates burn incinerators and AMM pool reserves to compute true private insider concentration.</i>`,
-  ]
-    .filter((line) => line !== '')
-    .join('\n');
+    '',
+    `🔗 <a href="${webUrl}">[🌐 Full Ledger]</a> • <a href="${solscanHoldersUrl}">[🔍 Solscan Holders]</a>`,
+    '',
+    `<code>${mint}</code>`,
+  ].join('\n');
 }
 
 /**
  * 3. LIQUIDITY DEEP-DIVE REPORT (/lp or /liquidity)
  */
-export function formatLiquidityReport(report: TokenReport): string {
+export function formatLiquidityReport(report: TokenReport, baseUrl?: string): string {
+  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://launchlens-delta.vercel.app';
+  const cleanBase = base.replace(/\/$/, '');
   const { token, liquidity } = report;
   const symbol = escapeHtml(token.symbol || 'TOKEN');
+  const name = escapeHtml(token.name || 'Token');
   const mint = token.mint;
+  const webUrl = `${cleanBase}/report/${mint}`;
+  const dexscreenerUrl =
+    liquidity.highestLiquidityPool?.url || `https://dexscreener.com/solana/${mint}`;
+
   const totalLiq = formatCurrency(liquidity.totalLiquidityUsd);
   const totalVol = formatCurrency(liquidity.totalVolume24h);
   const poolCount = liquidity.pools.length;
 
   const highestPool = liquidity.highestLiquidityPool;
   const lpLockedPct = highestPool?.lpLockedPct !== undefined
-    ? `${highestPool.lpLockedPct.toFixed(1)}%`
-    : 'Unknown';
+    ? `${highestPool.lpLockedPct.toFixed(1)}% Locked 🔒`
+    : 'Unverified ⚠️';
 
-  const poolEntries = (liquidity.pools || [])
-    .slice(0, 4)
-    .map((p: PoolRecord) => {
+  const poolTrees = (liquidity.pools || [])
+    .slice(0, 3)
+    .map((p: PoolRecord, idx: number, arr: PoolRecord[]) => {
+      const isLast = idx === arr.length - 1;
+      const branch = isLast ? '└' : '├';
+      const pipe = isLast ? ' ' : '│';
       const dex = escapeHtml(p.dexId?.toUpperCase() || 'AMM');
       const poolAddr = `${p.poolAddress.slice(0, 4)}...${p.poolAddress.slice(-4)}`;
       const baseSym = escapeHtml(p.baseToken.symbol || symbol);
       const quoteSym = escapeHtml(p.quoteToken.symbol || 'SOL');
       const liq = formatCurrency(p.liquidityUsd);
       const vol = formatCurrency(p.volume24h);
-      const locked = p.lpLockedPct !== undefined ? `${p.lpLockedPct.toFixed(0)}% locked` : 'Unlocked';
+      const locked = p.lpLockedPct !== undefined ? `<b>${p.lpLockedPct.toFixed(0)}% Locked 🔒</b>` : 'Unlocked ⚠️';
+      const dsLink = p.url ? `<a href="${p.url}">[DEXScreener]</a>` : '';
+      const solscanLink = `<a href="https://solscan.io/account/${p.poolAddress}">[Solscan]</a>`;
 
-      return `• <b>${dex}</b> (${baseSym}/${quoteSym})\n  Pool: <code>${poolAddr}</code>\n  Liq: <b>${liq}</b> • 24h Vol: ${vol}\n  LP State: <b>${locked}</b>`;
+      return [
+        `${branch} <b>${dex}</b> (${baseSym}/${quoteSym}) • <code>${poolAddr}</code>`,
+        `${pipe} ├ Liq: <b>${liq}</b> • Vol: ${vol}`,
+        `${pipe} ├ State: ${locked}`,
+        `${pipe} └ Links: ${dsLink ? `${dsLink} • ` : ''}${solscanLink}`,
+      ].join('\n');
     })
-    .join('\n\n');
+    .join('\n│\n');
 
   return [
-    `💧 <b>LIQUIDITY &amp; AMM AUDIT: $${symbol}</b>`,
-    `<code>${mint}</code>`,
+    `💧 <a href="${webUrl}"><b>${name}</b></a> — Liquidity Audit ($${symbol})`,
+    `└ 📊 Total LP: <b>${totalLiq}</b> | 24h Vol: <b>${totalVol}</b> | ${lpLockedPct}`,
     '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `📊 <b>Global AMM Reserves:</b>`,
-    `• Total Liquidity: <b>${totalLiq}</b>`,
-    `• 24h Volume: <b>${totalVol}</b>`,
-    `• Discovered Pools: <b>${poolCount} AMM pair${poolCount === 1 ? '' : 's'}</b>`,
-    `• Primary Pool Lockup: <b>${lpLockedPct}</b>`,
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `🏊 <b>Active AMM Pools (${poolCount})</b>`,
+    poolTrees || '└ <i>No active liquidity pools discovered on Raydium, Orca, or Meteora.</i>',
     '',
-    `🏊 <b>Active Trading Pools:</b>`,
-    poolEntries || '<i>No active liquidity pools discovered on Raydium, Orca, or Meteora.</i>',
-    '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
     `🔒 <i>Locked LP tokens prevent creators from draining reserves in sudden exit liquidity pulls.</i>`,
-  ]
-    .filter((line) => line !== '')
-    .join('\n');
+    '',
+    `🔗 <a href="${webUrl}">[🌐 Web Pools]</a> • <a href="${dexscreenerUrl}">[📈 DEXScreener]</a>`,
+    '',
+    `<code>${mint}</code>`,
+  ].join('\n');
 }
 
 /**
  * 4. SECURITY & AUTHORITIES DEEP-DIVE REPORT (/auth or /security)
  */
-export function formatSecurityReport(report: TokenReport): string {
+export function formatSecurityReport(report: TokenReport, baseUrl?: string): string {
+  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://launchlens-delta.vercel.app';
+  const cleanBase = base.replace(/\/$/, '');
   const { token } = report;
   const symbol = escapeHtml(token.symbol || 'TOKEN');
+  const name = escapeHtml(token.name || 'Token');
   const mint = token.mint;
+  const webUrl = `${cleanBase}/report/${mint}`;
+  const solscanContractUrl = `https://solscan.io/token/${mint}`;
 
   const mintAuth = token.authorities.isMintRevoked
-    ? '🟢 <b>PERMANENTLY REVOKED (Safe)</b>\n  <i>Additional token supply cannot be minted. Inflation/dilution risk eliminated.</i>'
-    : `🔴 <b>ACTIVE (High Risk)</b>\n  <i>Owner key can arbitrarily mint new tokens to dump:\n  <code>${escapeHtml(token.authorities.mintAuthority || 'Active')}</code></i>`;
+    ? '├ Mint Authority: <b>REVOKED (Safe) 🟢</b>\n│ ├ Status: Total supply is permanently capped.\n│ └ Key: <code>None (null)</code>'
+    : `├ Mint Authority: <b>ACTIVE (High Risk) 🔴</b>\n│ ├ Status: Creator can arbitrarily mint new tokens.\n│ └ Key: <code>${escapeHtml(token.authorities.mintAuthority || 'Active')}</code>`;
 
   const freezeAuth = token.authorities.isFreezeRevoked
-    ? '🟢 <b>PERMANENTLY REVOKED (Safe)</b>\n  <i>Wallet token accounts cannot be frozen or blacklisted.</i>'
-    : `🔴 <b>ACTIVE (High Risk)</b>\n  <i>Freeze authority is retained; user token accounts could be halted from trading:\n  <code>${escapeHtml(token.authorities.freezeAuthority || 'Active')}</code></i>`;
+    ? '├ Freeze Authority: <b>REVOKED (Safe) 🟢</b>\n│ ├ Status: Token accounts cannot be frozen.\n│ └ Key: <code>None (null)</code>'
+    : `├ Freeze Authority: <b>ACTIVE (High Risk) 🔴</b>\n│ ├ Status: Creator can freeze user token accounts.\n│ └ Key: <code>${escapeHtml(token.authorities.freezeAuthority || 'Active')}</code>`;
 
   const updateAuth = !token.authorities.isMutable
-    ? '🟢 <b>IMMUTABLE (Safe)</b>\n  <i>Metadata, name, symbol, and URI are permanently locked.</i>'
-    : `🟡 <b>MUTABLE (Owner Modifiable)</b>\n  <i>Update authority can modify token name, ticker, and media image:\n  <code>${escapeHtml(token.authorities.updateAuthority || 'Active')}</code></i>`;
+    ? '├ Metadata Mutability: <b>IMMUTABLE (Safe) 🟢</b>\n│ ├ Status: Name, ticker, and image cannot be altered.\n│ └ Key: <code>None (null)</code>'
+    : `├ Metadata Mutability: <b>MUTABLE (Changeable) 🟡</b>\n│ ├ Status: Metadata update authority is retained.\n│ └ Key: <code>${escapeHtml(token.authorities.updateAuthority || 'Active')}</code>`;
 
+  const progStandard = escapeHtml(token.tokenProgram);
   const extensions = token.extensions && token.extensions.length > 0
-    ? `⚠️ <b>Detected Extensions:</b>\n  ${escapeHtml(token.extensions.join(', '))}`
-    : '🟢 <b>Standard SPL Program</b> (No hidden transfer hooks or fees detected)';
+    ? `⚠️ Detected Extensions: ${escapeHtml(token.extensions.join(', '))}`
+    : 'Standard SPL Program (No transfer hooks or hidden fees)';
 
   return [
-    `🔐 <b>SECURITY &amp; PERMISSIONS: $${symbol}</b>`,
-    `<code>${mint}</code>`,
+    `🔐 <a href="${webUrl}"><b>${name}</b></a> — Security &amp; Permissions ($${symbol})`,
+    `└ 🛡️ Cryptographic Access Controls`,
     '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `👮 <b>Cryptographic Controls:</b>`,
-    '',
-    `• <b>Mint Authority:</b>`,
+    `👮 <b>On-Chain Authority State</b>`,
     mintAuth,
-    '',
-    `• <b>Freeze Authority:</b>`,
+    '│',
     freezeAuth,
-    '',
-    `• <b>Metadata Status:</b>`,
+    '│',
     updateAuth,
+    '│',
+    `└ Program Standard: <b>${progStandard}</b>`,
+    `  └ Extensions: ${extensions}`,
     '',
-    `• <b>Token Program Standard:</b> <code>${escapeHtml(token.tokenProgram)}</code>`,
-    extensions,
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `💡 <i>Revoked authorities prove current on-chain state observed at block slot. Always inspect team multi-sig structures.</i>`,
+    `💡 <i>Revoked authorities prove current on-chain state observed at block slot.</i>`,
+    '',
+    `🔗 <a href="${webUrl}">[🌐 Web Security]</a> • <a href="${solscanContractUrl}">[🔍 Solscan Contract]</a>`,
+    '',
+    `<code>${mint}</code>`,
   ].join('\n');
 }
 
 /**
  * 5. RISK FINDINGS & SCORECARD REPORT (/risk or /audit)
  */
-export function formatRiskReport(report: TokenReport): string {
+export function formatRiskReport(report: TokenReport, baseUrl?: string): string {
+  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://launchlens-delta.vercel.app';
+  const cleanBase = base.replace(/\/$/, '');
   const { token, risk } = report;
   const symbol = escapeHtml(token.symbol || 'TOKEN');
+  const name = escapeHtml(token.name || 'Token');
   const mint = token.mint;
+  const webUrl = `${cleanBase}/report/${mint}`;
+  const rugcheckUrl = `https://rugcheck.xyz/tokens/${mint}`;
 
   const riskBadge = getRiskBadge(risk.scorecard.overallLevel);
   const riskScore = risk.scorecard.score ?? 0;
-
   const breakdown = risk.scorecard.breakdown;
-  const bText = [
-    `• Authorities: <b>${breakdown.authorities.score}/100</b> (${escapeHtml(breakdown.authorities.status)})`,
-    `• Holders: <b>${breakdown.holders.score}/100</b> (${escapeHtml(breakdown.holders.status)})`,
-    `• Liquidity: <b>${breakdown.liquidity.score}/100</b> (${escapeHtml(breakdown.liquidity.status)})`,
-    `• Code / Extensions: <b>${breakdown.codeOrExtensions.score}/100</b> (${escapeHtml(breakdown.codeOrExtensions.status)})`,
-  ].join('\n');
 
-  const findingsList = (risk.findings || [])
-    .map((f: RiskFinding) => {
+  const findingsTrees = (risk.findings || [])
+    .slice(0, 5)
+    .map((f: RiskFinding, idx: number, arr: RiskFinding[]) => {
+      const isLast = idx === arr.length - 1;
+      const branch = isLast ? '└' : '├';
+      const pipe = isLast ? ' ' : '│';
       const icon = f.severity === 'CRITICAL' ? '🚨' : f.severity === 'HIGH' ? '🔴' : f.severity === 'MEDIUM' ? '🟡' : '🟢';
-      return `${icon} <b>${escapeHtml(f.title)}</b> [${f.severity}]\n   <i>${escapeHtml(f.description)}</i>\n   <code>Evidence: ${escapeHtml(f.evidence)}</code>`;
+
+      return [
+        `${branch} ${icon} <b>${escapeHtml(f.title)}</b> [${f.severity}]`,
+        `${pipe} ├ Rule: ${escapeHtml(f.description)}`,
+        `${pipe} └ Evidence: <code>${escapeHtml(f.evidence)}</code>`,
+      ].join('\n');
     })
-    .join('\n\n');
+    .join('\n│\n');
 
   return [
-    `⚠️ <b>RISK SCORECARD &amp; FINDINGS: $${symbol}</b>`,
-    `<code>${mint}</code>`,
+    `⚠️ <a href="${webUrl}"><b>${name}</b></a> — Risk Scorecard ($${symbol})`,
+    `└ 🛡️ RATING: <b>${riskBadge}</b> | Score: <b>${riskScore}/100</b>`,
     '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `🛡️ <b>OVERALL RATING:</b> ${riskBadge}`,
-    `📊 <b>Risk Score:</b> <b>${riskScore}/100</b> (0 = Cleanest, 100 = Riskiest)`,
+    `📊 <b>Category Scorecard</b>`,
+    `├ Authorities: <b>${breakdown.authorities.score}/100</b> (${escapeHtml(breakdown.authorities.status)})`,
+    `├ Holders: <b>${breakdown.holders.score}/100</b> (${escapeHtml(breakdown.holders.status)})`,
+    `├ Liquidity: <b>${breakdown.liquidity.score}/100</b> (${escapeHtml(breakdown.liquidity.status)})`,
+    `└ Code / Extensions: <b>${breakdown.codeOrExtensions.score}/100</b> (${escapeHtml(breakdown.codeOrExtensions.status)})`,
     '',
-    `<b>Category Score Breakdown:</b>`,
-    bText,
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `📋 <b>Itemized Rule Trigger Audit</b>`,
+    findingsTrees || '└ 🟢 <i>No risk findings triggered. Clean audit profile.</i>',
     '',
-    `📋 <b>Full Rule Findings:</b>`,
-    findingsList || '• 🟢 <i>No risk findings triggered. Clean audit profile.</i>',
-    '',
-    `━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
     `⚖️ <i>Findings reflect observable on-chain conditions. Never financial advice.</i>`,
+    '',
+    `🔗 <a href="${webUrl}">[🌐 Full Audit]</a> • <a href="${rugcheckUrl}">[🛡️ RugCheck]</a>`,
+    '',
+    `<code>${mint}</code>`,
   ].join('\n');
 }
 
