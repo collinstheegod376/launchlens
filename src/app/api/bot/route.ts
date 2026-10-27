@@ -3,9 +3,12 @@ import { bot } from '@/bot/bot';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 30; // Max allowed serverless duration on Vercel
 
 // grammY standard HTTP webhook callback adapter for Next.js App Router (std/http)
-const handleWebhook = webhookCallback(bot, 'std/http');
+const handleWebhook = webhookCallback(bot, 'std/http', {
+  timeoutMilliseconds: 25000,
+});
 
 /**
  * Health check & verification endpoint for the Telegram webhook.
