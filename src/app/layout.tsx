@@ -1,9 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Navbar } from "./components/Navbar";
 import { ShieldCheck, ExternalLink, Terminal, Cpu } from "lucide-react";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#080c14",
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://launchlens-delta.vercel.app"),
   title: "LaunchLens — Evidence-First Solana Token Transparency Reports",
   description:
     "Deterministic on-chain holder distribution, liquidity verification, authority status, and grounded AI summaries for Solana tokens. Zero hype, zero speculation.",
@@ -41,12 +49,12 @@ export default function RootLayout({
         <Navbar />
 
         {/* Page Content Container */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-10">
           {children}
         </main>
 
         {/* Informational Disclaimer Footer */}
-        <footer className="w-full border-t border-lens-700/40 bg-lens-850/60 backdrop-blur-md py-10 mt-16">
+        <footer className="w-full border-t border-lens-700/40 bg-lens-850/60 backdrop-blur-md py-8 sm:py-10 mt-10 sm:mt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
               {/* Brand Col */}

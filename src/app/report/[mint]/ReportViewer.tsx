@@ -158,7 +158,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
       )}
 
       {/* Main Report Header Card */}
-      <div className="rounded-2xl border border-lens-700/60 bg-lens-850/80 p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+      <div className="rounded-2xl border border-lens-700/60 bg-lens-850/80 p-4 sm:p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-lens-accent/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -180,7 +180,8 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
             {/* Copyable Mint Address & Solscan Link */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 font-mono">
               <span className="text-slate-500">Mint:</span>
-              <span className="text-slate-200 select-all">{token.mint}</span>
+              <span className="text-slate-200 select-all font-mono break-all sm:break-normal hidden sm:inline">{token.mint}</span>
+              <span className="text-slate-200 select-all font-mono sm:hidden">{truncateAddress(token.mint, 6)}</span>
               <button
                 type="button"
                 onClick={handleCopyMint}
@@ -212,9 +213,9 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
           </div>
 
           {/* Overall Risk Score Badge & Actions */}
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto">
             <div
-              className={`flex items-center gap-3 rounded-2xl border px-5 py-3 shadow-lg ${riskBadge.bg}`}
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 sm:px-5 sm:py-3 shadow-lg w-full sm:w-auto ${riskBadge.bg}`}
             >
               <RiskIcon className="h-7 w-7 shrink-0" />
               <div>
@@ -231,11 +232,11 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
             </div>
 
             {/* Action Buttons: Share & Rescan */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={handleShare}
-                className="flex items-center gap-1.5 rounded-xl border border-lens-700 bg-lens-800/80 px-4 py-3 text-xs font-semibold text-slate-200 hover:border-lens-accent/50 hover:text-white transition-all shadow-sm"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl border border-lens-700 bg-lens-800/80 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs font-semibold text-slate-200 hover:border-lens-accent/50 hover:text-white transition-all shadow-sm active:scale-95"
                 title="Share Report"
               >
                 {copiedShare ? (
@@ -255,7 +256,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
                 type="button"
                 onClick={handleRescan}
                 disabled={isRescanning}
-                className="flex items-center gap-1.5 rounded-xl border border-lens-700 bg-lens-800/80 px-4 py-3 text-xs font-semibold text-slate-200 hover:border-lens-accent/50 hover:text-white transition-all disabled:opacity-50 shadow-sm"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl border border-lens-700 bg-lens-800/80 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs font-semibold text-slate-200 hover:border-lens-accent/50 hover:text-white transition-all disabled:opacity-50 shadow-sm active:scale-95"
                 title="Trigger Fresh RPC & Indexer Query"
               >
                 <RotateCw
@@ -271,8 +272,8 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
 
         {/* AI Narrative Summary Card */}
         <div className="mt-8 rounded-xl border border-lens-700/60 bg-lens-900/70 p-5 backdrop-blur-md">
-          <div className="flex items-center justify-between pb-3 border-b border-lens-700/40 mb-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-lens-700/40 mb-3">
+            <div className="flex flex-wrap items-center gap-2">
               <BrainCircuit className="h-4 w-4 text-lens-accent" />
               <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
                 Grounded AI Transparency Narrative
@@ -334,7 +335,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         </div>
 
         {/* Overview Stats Bar */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-6 border-t border-lens-700/40">
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 pt-5 sm:pt-6 border-t border-lens-700/40">
           <div className="rounded-xl border border-lens-700/50 bg-lens-800/40 p-3">
             <span className="text-[11px] text-slate-400 font-medium">Price USD</span>
             <div className="text-base font-bold text-white num-mono mt-0.5">
@@ -388,7 +389,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         <button
           type="button"
           onClick={() => setActiveTab("findings")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all border-b-2 whitespace-nowrap shrink-0 ${
             activeTab === "findings"
               ? "border-lens-accent text-lens-accent bg-lens-accent/5"
               : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
@@ -401,7 +402,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         <button
           type="button"
           onClick={() => setActiveTab("holders")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all border-b-2 whitespace-nowrap shrink-0 ${
             activeTab === "holders"
               ? "border-lens-accent text-lens-accent bg-lens-accent/5"
               : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
@@ -414,7 +415,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         <button
           type="button"
           onClick={() => setActiveTab("authorities")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all border-b-2 whitespace-nowrap shrink-0 ${
             activeTab === "authorities"
               ? "border-lens-accent text-lens-accent bg-lens-accent/5"
               : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
@@ -427,7 +428,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         <button
           type="button"
           onClick={() => setActiveTab("liquidity")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all border-b-2 whitespace-nowrap shrink-0 ${
             activeTab === "liquidity"
               ? "border-lens-accent text-lens-accent bg-lens-accent/5"
               : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
@@ -440,7 +441,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         <button
           type="button"
           onClick={() => setActiveTab("provenance")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all border-b-2 whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all border-b-2 whitespace-nowrap shrink-0 ${
             activeTab === "provenance"
               ? "border-lens-accent text-lens-accent bg-lens-accent/5"
               : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
@@ -457,7 +458,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
         {activeTab === "findings" && (
           <div className="space-y-6">
             {/* Scorecard Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
               <div className="rounded-xl border border-lens-700/50 bg-lens-850/60 p-4">
                 <span className="text-xs text-slate-400 font-medium">Authorities Score</span>
                 <div className="text-xl font-bold text-white mt-1">
@@ -515,7 +516,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
                       key={level}
                       type="button"
                       onClick={() => setSeverityFilter(level)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border ${
+                      className={`rounded-lg px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold transition-all border ${
                         severityFilter === level
                           ? "bg-lens-accent/15 border-lens-accent text-lens-accent"
                           : "bg-lens-800/60 border-lens-700/60 text-slate-400 hover:text-white"
@@ -570,7 +571,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
                           <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">
                             Deterministic Evidence Quote:
                           </div>
-                          <code className="text-lens-accent block overflow-x-auto">
+                          <code className="text-lens-accent block overflow-x-auto whitespace-pre-wrap break-all sm:break-normal">
                             {finding.evidence}
                           </code>
                         </div>
@@ -684,8 +685,12 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
                 </span>
               </div>
 
+              <div className="sm:hidden text-[10px] text-slate-400 flex items-center justify-between px-4 py-1.5 bg-lens-900/60 border-b border-lens-700/40 font-mono">
+                <span>Swipe table horizontally</span>
+                <span>→</span>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[620px] text-left text-xs">
                   <thead className="bg-lens-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-lens-700/40">
                     <tr>
                       <th className="py-3 px-4">Rank</th>
@@ -954,8 +959,13 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
                   No decentralized trading pools found for this mint address.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                <>
+                  <div className="sm:hidden text-[10px] text-slate-400 flex items-center justify-between px-4 py-1.5 bg-lens-900/60 border-b border-lens-700/40 font-mono">
+                    <span>Swipe table horizontally</span>
+                    <span>→</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[620px] text-left text-xs">
                     <thead className="bg-lens-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-lens-700/40">
                       <tr>
                         <th className="py-3 px-4">DEX Protocol</th>
@@ -1036,7 +1046,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
                     </tbody>
                   </table>
                 </div>
-              )}
+              </>)}
             </div>
           </div>
         )}

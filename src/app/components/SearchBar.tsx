@@ -74,7 +74,7 @@ export function SearchBar({ initialValue = "", autoFocus = false, className = ""
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative flex items-center rounded-2xl border border-lens-700/80 bg-lens-850/90 shadow-2xl backdrop-blur-xl transition-all focus-within:border-lens-accent focus-within:ring-2 focus-within:ring-lens-accent/20">
           <div className="pointer-events-none pl-4 text-slate-400">
-            <Search className="h-5 w-5 text-lens-accent/80" />
+            <Search className="h-4 w-4 sm:h-5 sm:w-5 text-lens-accent/80" />
           </div>
 
           <input
@@ -84,17 +84,17 @@ export function SearchBar({ initialValue = "", autoFocus = false, className = ""
               setMintInput(e.target.value);
               if (error) setError(null);
             }}
-            placeholder="Paste Solana token mint address (e.g. JUPyiwrYJFskUPiHa7h...)"
+            placeholder="Paste Solana token mint address..."
             autoFocus={autoFocus}
             disabled={isPending}
-            className="w-full bg-transparent px-4 py-4 text-sm sm:text-base text-slate-100 placeholder-slate-500 focus:outline-none disabled:opacity-60 font-mono tracking-tight"
+            className="w-full bg-transparent px-2.5 sm:px-4 py-3.5 sm:py-4 text-xs sm:text-base text-slate-100 placeholder-slate-500 focus:outline-none disabled:opacity-60 font-mono tracking-tight"
           />
 
           <div className="pr-2">
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-lens-accent via-cyan-400 to-emerald-400 px-5 py-2.5 text-sm font-semibold text-lens-900 shadow-md transition-all hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-70"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-lens-accent via-cyan-400 to-emerald-400 px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold text-lens-900 shadow-md transition-all hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-70 shrink-0"
             >
               {isPending ? (
                 <>
@@ -103,7 +103,8 @@ export function SearchBar({ initialValue = "", autoFocus = false, className = ""
                 </>
               ) : (
                 <>
-                  <span>Scan Token</span>
+                  <span className="sm:hidden">Scan</span>
+                  <span className="hidden sm:inline">Scan Token</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

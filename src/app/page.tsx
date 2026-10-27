@@ -22,9 +22,9 @@ export default function HomePage() {
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <section className="w-full text-center py-12 md:py-20 flex flex-col items-center">
+      <section className="w-full text-center py-8 sm:py-16 md:py-20 flex flex-col items-center">
                 {/* Hero Title */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.15]">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.18] sm:leading-[1.15]">
           Evidence-First Solana{" "}
           <span className="bg-gradient-to-r from-lens-accent via-cyan-300 to-lens-emerald bg-clip-text text-transparent">
             Token Transparency
@@ -33,13 +33,13 @@ export default function HomePage() {
         </h1>
 
         {/* Hero Subhead */}
-        <p className="mt-6 text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl font-normal leading-relaxed">
+        <p className="mt-4 sm:mt-6 text-sm sm:text-lg md:text-xl text-slate-300 max-w-2xl font-normal leading-relaxed px-2">
           Deterministic on-chain holder distribution, liquidity verification, authority status,
           and grounded AI summaries. Zero hype, zero speculation.
         </p>
 
         {/* Search Bar Component */}
-        <div className="w-full mt-10">
+        <div className="w-full mt-6 sm:mt-10">
           <SearchBar autoFocus />
         </div>
       </section>
@@ -250,9 +250,9 @@ export default function HomePage() {
       </section>
 
       {/* Quick Launch CTA Banner */}
-      <section className="w-full mt-6 mb-12 rounded-3xl border border-lens-700/80 bg-gradient-to-r from-lens-850 via-lens-800 to-lens-850 p-8 sm:p-12 text-center relative overflow-hidden">
+      <section className="w-full mt-6 mb-12 rounded-3xl border border-lens-700/80 bg-gradient-to-r from-lens-850 via-lens-800 to-lens-850 p-6 sm:p-12 text-center relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-lens-accent/10 rounded-full blur-3xl pointer-events-none" />
-        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+        <h3 className="text-xl sm:text-3xl font-bold text-white mb-3">
           Audit Any Solana Token in Seconds
         </h3>
         <p className="text-sm text-slate-400 max-w-xl mx-auto mb-6">
