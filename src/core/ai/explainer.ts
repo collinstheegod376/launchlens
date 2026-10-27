@@ -166,74 +166,91 @@ export function generateDeterministicSummary(input: ExplainerInput): AiSummaryRe
 }
 
 /**
- * Generates an AI summary via Groq (ultra-fast, free tier with Llama 3.3 70B).
+ * Generates an AI summary via Groq with resilient multi-model fallback.
  */
 async function generateGroqSummary(input: ExplainerInput, apiKey: string): Promise<AiSummaryResult> {
   const factualContext = buildFactualContext(input);
   const prompt = `${ANALYST_PROMPT_INSTRUCTIONS}\n\nFACTS:\n${JSON.stringify(factualContext, null, 2)}`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  // Candidate models in order of priority (llama-3.1-8b-instant is universally free & active on all Groq accounts)
+  const candidateModels = [
+    process.env.GROQ_MODEL?.trim(),
+    "llama-3.1-8b-instant",
+    "llama3-70b-8192",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-70b-versatile",
+    "mixtral-8x7b-32768",
+  ].filter(Boolean) as string[];
 
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: "You are LaunchLens AI, an objective on-chain Solana risk analyst. Output only valid JSON.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1,
-      }),
-      signal: controller.signal,
-    });
+  for (const model of candidateModels) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    clearTimeout(timeoutId);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: "You are LaunchLens AI, an objective on-chain Solana risk analyst. Output only valid JSON.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.1,
+        }),
+        signal: controller.signal,
+      });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn(`[explainer] Groq API returned error status ${res.status}:`, errText);
-      return generateDeterministicSummary(input);
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errText = await res.text();
+        // If model not found or invalid, try next candidate model
+        if (res.status === 404 || errText.includes("model_not_found")) {
+          console.warn(`[explainer] Model ${model} not found on Groq, trying next candidate...`);
+          continue;
+        }
+        console.warn(`[explainer] Groq API error (${res.status}) on model ${model}:`, errText);
+        continue;
+      }
+
+      const json = await res.json();
+      const content = json.choices?.[0]?.message?.content;
+      if (!content) {
+        continue;
+      }
+
+      const parsed = JSON.parse(content);
+      if (
+        typeof parsed.narrative === "string" &&
+        Array.isArray(parsed.keyTakeaways) &&
+        Array.isArray(parsed.uncertainties)
+      ) {
+        return {
+          narrative: parsed.narrative,
+          keyTakeaways: parsed.keyTakeaways,
+          uncertainties: parsed.uncertainties,
+          generatedBy: "groq",
+        };
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn(`[explainer] Groq attempt failed for model ${model}:`, err);
     }
-
-    const json = await res.json();
-    const content = json.choices?.[0]?.message?.content;
-    if (!content) {
-      return generateDeterministicSummary(input);
-    }
-
-    const parsed = JSON.parse(content);
-    if (
-      typeof parsed.narrative === "string" &&
-      Array.isArray(parsed.keyTakeaways) &&
-      Array.isArray(parsed.uncertainties)
-    ) {
-      return {
-        narrative: parsed.narrative,
-        keyTakeaways: parsed.keyTakeaways,
-        uncertainties: parsed.uncertainties,
-        generatedBy: "groq",
-      };
-    }
-
-    return generateDeterministicSummary(input);
-  } catch (err) {
-    clearTimeout(timeoutId);
-    console.warn("[explainer] Groq API failed, falling back to deterministic template:", err);
-    return generateDeterministicSummary(input);
   }
+
+  // If all Groq models fail or timeout, fall back cleanly to deterministic rules
+  return generateDeterministicSummary(input);
 }
 
 /**

@@ -279,7 +279,7 @@ export function ReportViewer({ initialReport, mint }: ReportViewerProps) {
               </span>
               <span className="rounded bg-lens-800 px-2 py-0.5 text-[10px] font-mono text-lens-accent border border-lens-700">
                 {aiSummary.generatedBy === "groq"
-                  ? "Groq (Llama 3.3 70B)"
+                  ? "Groq AI (Llama 3)"
                   : aiSummary.generatedBy === "gemini"
                   ? "Google Gemini 1.5"
                   : "Deterministic Engine"}
