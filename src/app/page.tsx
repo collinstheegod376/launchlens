@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { SearchBar } from "./components/SearchBar";
 import {
+  Send,
   ShieldAlert,
   ShieldCheck,
   Lock,
@@ -22,13 +23,7 @@ export default function HomePage() {
     <div className="flex flex-col items-center">
       {/* Hero Section */}
       <section className="w-full text-center py-12 md:py-20 flex flex-col items-center">
-        {/* Top Tagline Pill */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-lens-accent/30 bg-lens-accent/10 px-4 py-1.5 text-xs font-semibold text-lens-accent mb-6 backdrop-blur-md">
-          <ShieldCheck className="h-4 w-4" />
-          <span>Research-Grade Solana Token Intelligence</span>
-        </div>
-
-        {/* Hero Title */}
+                {/* Hero Title */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.15]">
           Evidence-First Solana{" "}
           <span className="bg-gradient-to-r from-lens-accent via-cyan-300 to-lens-emerald bg-clip-text text-transparent">
@@ -263,20 +258,15 @@ export default function HomePage() {
         <p className="text-sm text-slate-400 max-w-xl mx-auto mb-6">
           Paste any Solana SPL or Token-2022 mint address to generate an instant, unforgeable transparency dossier.
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="/report/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
-            className="rounded-xl bg-lens-accent px-6 py-3 text-sm font-bold text-lens-900 transition-all hover:brightness-110 shadow-lg shadow-lens-accent/20"
-          >
-            Inspect Sample: JUP
-          </Link>
+        <div className="flex items-center justify-center">
           <a
             href="https://t.me/LaunchLensBot"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-xl border border-lens-700 bg-lens-900/60 px-6 py-3 text-sm font-semibold text-slate-200 transition-all hover:border-lens-accent/50 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-xl bg-lens-accent px-6 py-3 text-sm font-bold text-lens-900 transition-all hover:brightness-110 shadow-lg shadow-lens-accent/20"
           >
-            Open Telegram Bot
+            <Send className="h-4 w-4" />
+            <span>Open Telegram Bot</span>
           </a>
         </div>
       </section>

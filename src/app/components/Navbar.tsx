@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, Activity, Send, Github } from "lucide-react";
+import { Send, Github } from "lucide-react";
 
 export function Navbar() {
   return (
@@ -20,9 +20,6 @@ export function Navbar() {
               <span className="text-xl font-bold tracking-tight text-white">
                 Launch<span className="text-lens-accent">Lens</span>
               </span>
-              <span className="rounded-full bg-lens-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-lens-accent border border-lens-accent/30">
-                Solana
-              </span>
             </div>
             <span className="text-[11px] font-medium text-slate-400">
               Deterministic Token Intelligence
@@ -30,19 +27,8 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Center / Right Status & Links */}
+        {/* Center / Right Links */}
         <div className="flex items-center gap-3 sm:gap-5">
-          {/* Solana Mainnet status indicator pill */}
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-lens-700/60 bg-lens-850/80 px-3 py-1.5 text-xs text-slate-300 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lens-emerald opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-lens-emerald"></span>
-            </span>
-            <span className="font-medium text-slate-200">Mainnet-Beta</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-lens-emerald font-semibold">Operational</span>
-          </div>
-
           {/* Telegram Bot Link */}
           <a
             href="https://t.me/LaunchLensBot"
@@ -57,7 +43,7 @@ export function Navbar() {
 
           {/* GitHub Repo Link */}
           <a
-            href="https://github.com"
+            href="https://github.com/collinstheegod376/launchlens"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 rounded-lg border border-lens-700/60 bg-lens-850/80 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
@@ -71,4 +57,3 @@ export function Navbar() {
     </header>
   );
 }
-export default Navbar;
